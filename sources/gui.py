@@ -17,7 +17,8 @@ class MainWindow():
 
         self._accounts_frame = AccountsFrame(
             self._root, text='Управление аккаунтами', padding='10 10 10 10')
-        self._accounts_frame.grid(column=0, row=10, sticky='new', padx=15, pady=5)
+        self._accounts_frame.grid(
+            column=0, row=10, sticky='new', padx=15, pady=5)
 
         self._proxy_frame = ProxyFrame(
             self._root, text='Список прокси', padding='10 10 10 10')
