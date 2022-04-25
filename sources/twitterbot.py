@@ -4,30 +4,43 @@ from selenium.webdriver.common.by import By
 import selenium.common.exceptions
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
-# from selenium.webdriver.common.proxy import Proxy, ProxyType
+from selenium.webdriver.common.proxy import Proxy, ProxyType
 
 from time import sleep
 import pickle
 
 
 class TwitterBot():
+    PROXY_FILE = '.\\assets\\proxy.pkl'
     WAIT_FOR_ELEMENT_S = 10
     SITE_MAIN_URL = 'https://twitter.com/'
     MAIN_URL_LEN = len(SITE_MAIN_URL)
 
-    def __init__(self, proxy):
+    def __init__(self, username, proxy):
         # Setup main page
         self._main_page = 'https://twitter.com'
         self._home_url = 'https://twitter.com/home'
+        self._proxy_list = dict()
         self._sleep_timer = 1
+        self._driver = None
 
-        # Setup proxylist
-        # self._proxy = Proxy({
-        #     'proxyType': ProxyType.MANUAL,
-        #     'httpProxy': proxy,
-        #     'ftpProxy': proxy,
-        #     'sslProxy': proxy,
-        #     'noProxy': ''})
+        self.load_proxy_list()
+        if self.is_saved_proxy(username):
+            # Setup proxylist
+            self._proxy = Proxy({
+                'proxyType': ProxyType.MANUAL,
+                'httpProxy': self._proxy_list[username],
+                'ftpProxy': self._proxy_list[username],
+                'sslProxy': self._proxy_list[username],
+                'noProxy': ''})
+        else:
+            self._proxy = Proxy({
+                'proxyType': ProxyType.MANUAL,
+                'httpProxy': proxy,
+                'ftpProxy': proxy,
+                'sslProxy': proxy,
+                'noProxy': ''})
+            self._proxy_list[username] = proxy
         #
         # self._capabilities = webdriver.DesiredCapabilities.CHROME
         # self._proxy.add_to_capabilities(self._capabilities)
@@ -38,9 +51,12 @@ class TwitterBot():
         # Setup options
         self._options = Options()
         self._options.add_argument('window-size=1440,900')
-        self._options.add_argument("--log-level=2")
+        # self._options.add_argument("--log-level=0")
         # self._options.add_argument('--headless')
 
+        self._action_buttons = None
+
+    def start_browser(self):
         # Setup browser
         self._driver = webdriver.Chrome(
             service=self._service,
@@ -48,7 +64,17 @@ class TwitterBot():
         # desired_capabilities=self._capabilities)
 
         self._driver.implicitly_wait(TwitterBot.WAIT_FOR_ELEMENT_S)
-        self._action_buttons = None
+
+    def load_proxy_list(self):
+        try:
+            self._proxy_list = pickle.load(open(TwitterBot.PROXY_FILE, 'rb'))
+        except FileNotFoundError:
+            pass
+
+    def is_saved_proxy(self, username) -> bool:
+        if username in self._proxy_list:
+            return True
+        return False
 
     def _send_logs(self, message: str):
         print(message)
@@ -184,16 +210,21 @@ class TwitterBot():
         self._reply(tweet_link, message)
 
     def stop(self: 'TwitterBot') -> None:
-        self._driver.quit()
+        pickle.dump(self._proxy_list, open(TwitterBot.PROXY_FILE, 'wb'))
+        if self._driver is not None:
+            self._driver.quit()
 
 
 if __name__ == '__main__':
     tweet_link = 'https://twitter.com/_jessicasachs/status/1515855226598797321'
     message = 'Oh, nice work man'
-    userbot = TwitterBot('127.0.0.1:80')
-    print(userbot._get_profile_link(tweet_link))
+    userbot = TwitterBot('danysmall', '127.0.0.1:80')
+    try:
+        userbot.start_browser()
+        print(userbot._get_profile_link(tweet_link))
     # userbot.start(tweet_link, message)
-    userbot.stop()
+    finally:
+        userbot.stop()
 
     # userbot.login_new_user('danysmall3.pkl')
     # userbot.stop()
