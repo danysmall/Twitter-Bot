@@ -11,14 +11,14 @@ class AccountsFrame(ttk.LabelFrame):
         self._accounts_count_label = ttk.Label(
             self, text=f'Всего аккаунтов: {self._count}')
 
-        self._del_btn = ttk.Button(
-            self, text='Удалить аккаунт', width=24)
-        self._add_btn = ttk.Button(
-            self, text='Добавить аккаунт', width=24)
+        self._del_btn = ttk.Button(self, text='Удалить аккаунт', width=17)
+        self._add_btn = ttk.Button(self, text='Добавить аккаунт', width=17)
+        self._login_btn = ttk.Button(self, text='Войти в аккаунт', width=17)
 
-        self._accounts_count_label.grid(column=0, row=0, sticky='w', padx=10)
-        self._del_btn.grid(column=0, row=1, sticky='new', padx=10)
+        self._accounts_count_label.grid(column=0, row=0, sticky='w', padx=3)
+        self._del_btn.grid(column=0, row=1, sticky='new', padx=3)
         self._add_btn.grid(column=1, row=1, sticky='new')
+        self._login_btn.grid(column=2, row=1, sticky='new', padx=3)
 
     @property
     def count(self: 'AccountsFrame') -> int:
@@ -45,3 +45,11 @@ class AccountsFrame(ttk.LabelFrame):
     @del_account_func.setter
     def del_account_func(self: 'AccountsFrame', function: Callable) -> None:
         self._del_btn.configure(command=function)
+
+    @property
+    def login_account_func(self: 'AccountsFrame') -> Callable:
+        return self._login_btn.cget('command')
+
+    @login_account_func.setter
+    def login_account_func(self: 'AccountsFrame', function: Callable) -> None:
+        self._login_btn.configure(command=function)
