@@ -20,5 +20,16 @@ class ProxyFrame(ttk.LabelFrame):
         self._proxy_view.config(yscrollcommand=self._proxy_scroll.set)
 
     @property
-    def proxy_list(self):
-        return self._proxy_view.get()
+    def proxy_list(self: 'ProxyFrame') -> list:
+        proxy_str = self._proxy_view.get(1.0, constants.END)
+        try:
+            return proxy_str.split('\n')
+        except TypeError:
+            print('Error of getting list of proxy')
+            return list()
+
+    def disable_input(self: 'ProxyFrame') -> None:
+        self._proxy_view.configure(state='disabled')
+
+    def enable_input(self: 'ProxyFrame') -> None:
+        self._proxy_view.configure(state='normal')

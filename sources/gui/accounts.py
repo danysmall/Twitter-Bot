@@ -1,4 +1,5 @@
 from tkinter import ttk
+from typing import Callable
 
 
 class AccountsFrame(ttk.LabelFrame):
@@ -11,9 +12,9 @@ class AccountsFrame(ttk.LabelFrame):
             self, text=f'Всего аккаунтов: {self._count}')
 
         self._del_btn = ttk.Button(
-            self, text='Удалить аккаунт', command=self._del_account, width=24)
+            self, text='Удалить аккаунт', width=24)
         self._add_btn = ttk.Button(
-            self, text='Добавить аккаунт', command=self._add_account, width=24)
+            self, text='Добавить аккаунт', width=24)
 
         self._accounts_count_label.grid(column=0, row=0, sticky='w', padx=10)
         self._del_btn.grid(column=0, row=1, sticky='new', padx=10)
@@ -25,14 +26,22 @@ class AccountsFrame(ttk.LabelFrame):
 
     @count.setter
     def count(self: 'AccountsFrame', value: int) -> None:
-        if not isinstance(value, int):
-            raise TypeError(f'Argument must be int, not {type(value)}')
         self._count = value
         self._accounts_count_label.configure(
-            'text', f'Всего аккаунтов: {self._count}')
+            text=f'Всего аккаунтов: {self._count}')
 
-    def _add_account(self) -> None:
-        pass
+    @property
+    def add_account_func(self: 'AccountsFrame') -> Callable:
+        return self._add_btn.cget('command')
 
-    def _del_account(self) -> None:
-        pass
+    @add_account_func.setter
+    def add_account_func(self: 'AccountsFrame', function: Callable) -> None:
+        self._add_btn.configure(command=function)
+
+    @property
+    def del_account_func(self: 'AccountsFrame') -> Callable:
+        return self._del_btn.cget('command')
+
+    @del_account_func.setter
+    def del_account_func(self: 'AccountsFrame', function: Callable) -> None:
+        self._del_btn.configure(command=function)
