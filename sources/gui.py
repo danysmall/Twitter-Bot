@@ -8,7 +8,6 @@ from threading import Thread
 
 class MainWindow():
     """Main GUI windows of the program."""
-    MAX_THREADS_ALIVE = 3
 
     def __init__(self: 'MainWindow') -> None:
         self._all_thread_pool: list[Thread]
@@ -30,6 +29,7 @@ class MainWindow():
         self._accounts_frame.add_account_func = self.add_account
         self._accounts_frame.del_account_func = self.del_account
         self._accounts_frame.login_account_func = self.login_account
+        self._accounts_frame.path_to_accounts = '.\\accounts\\'
 
         self._proxy_frame = ProxyFrame(
             self._root, text='Список прокси', padding='10 10 10 10')
@@ -65,21 +65,18 @@ class MainWindow():
         if prompt is None:
             return
 
-        userbot = TwitterBot('127.0.0.1:80')
-        bot_thread = Thread(target=userbot.login_new_user, args=(prompt,))
-        bot_thread.start()
+        # userbot = TwitterBot('127.0.0.1:80')
+        # bot_thread = Thread(target=userbot.login_new_user, args=(prompt,))
+        # bot_thread.start()
 
-        self._all_thread_pool.append(bot_thread)
+        # self._all_thread_pool.append(bot_thread)
         print(f'Account <{prompt}> added')
 
     def del_account(self: 'MainWindow') -> None:
         print('Delete account')
 
     def login_account(self: 'MainWindow') -> None:
-        prompt = simpledialog.askstring(
-            'Введите уникальное название для аккаунта',
-            'Ввод строки')
-        print(prompt)
+        print('Logged to account')
 
     def send_logs(self: 'MainWindow', message: Union[list, str]) -> None:
         self._logs_frame.send_logs(message)
@@ -91,6 +88,7 @@ class MainWindow():
         checkboxes = self._action_frame.get_checkboxes()
         proxy = self._proxy_frame.proxy_list
         count = self._action_frame.count_accounts
+        max_count = self._action_frame.max_count_accounts
 
         thread_pool = list()
         for i in range(count):
@@ -109,7 +107,7 @@ class MainWindow():
         counter = 0
         while len(thread_pool) > counter:
             print(counter)
-            if self.count_alive_threads(thread_pool) < MainWindow.MAX_THREADS_ALIVE:
+            if self.count_alive_threads(thread_pool) < max_count:
                 thread_pool[counter].start()
                 counter += 1
 

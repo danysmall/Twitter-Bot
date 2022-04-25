@@ -61,6 +61,7 @@ class TwitterBot():
             self._driver.find_element(By.CLASS_NAME, 'r-usiww2')
             if self._driver.current_url == self._home_url:
                 return True
+            return False
         except selenium.common.exceptions.NoSuchElementException:
             return False
 

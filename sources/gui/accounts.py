@@ -1,24 +1,48 @@
-from tkinter import ttk
-from typing import Callable
+from tkinter import ttk, Listbox, constants
+from typing import Callable, Union
+import os
 
 
 class AccountsFrame(ttk.LabelFrame):
+    FILES_EXTENSION = '.pkl'
 
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
-        self._count = 15
+        self._path_to_accounts = './'
+        self._count = 0
         self._accounts_count_label = ttk.Label(
             self, text=f'Всего аккаунтов: {self._count}')
+
+        self.accounts_logged = Listbox(
+            self, selectmode=constants.SINGLE,
+            width=55, height=8)
+        self.accounts_logged.grid(
+            column=0, row=1, columnspan=3, padx=3, pady=10)
+
+        self._scrollbar_lgd = ttk.Scrollbar(self)
+        self._scrollbar_lgd.grid(column=3, row=1, sticky='nws', pady=10)
+        self._scrollbar_lgd.config(command=self.accounts_logged.yview)
+        self.accounts_logged.config(yscrollcommand=self._scrollbar_lgd.set)
 
         self._del_btn = ttk.Button(self, text='Удалить аккаунт', width=17)
         self._add_btn = ttk.Button(self, text='Добавить аккаунт', width=17)
         self._login_btn = ttk.Button(self, text='Войти в аккаунт', width=17)
 
         self._accounts_count_label.grid(column=0, row=0, sticky='w', padx=3)
-        self._del_btn.grid(column=0, row=1, sticky='new', padx=3)
-        self._add_btn.grid(column=1, row=1, sticky='new')
-        self._login_btn.grid(column=2, row=1, sticky='new', padx=3)
+        self._del_btn.grid(column=0, row=10, sticky='new', padx=3)
+        self._add_btn.grid(column=1, row=10, sticky='new')
+        self._login_btn.grid(
+            column=2, row=10, sticky='new', padx=3, columnspan=2)
+
+    @property
+    def path_to_accounts(self: 'AccountsFrame') -> str:
+        return self._path_to_accounts
+
+    @path_to_accounts.setter
+    def path_to_accounts(self: 'AccountsFrame', path: str) -> None:
+        self._path_to_accounts = path
+        self._insert_labels()
 
     @property
     def count(self: 'AccountsFrame') -> int:
@@ -53,3 +77,20 @@ class AccountsFrame(ttk.LabelFrame):
     @login_account_func.setter
     def login_account_func(self: 'AccountsFrame', function: Callable) -> None:
         self._login_btn.configure(command=function)
+
+    def _find_logged_accounts(self: 'AccountsFrame') -> Union[list, None]:
+        if not os.path.isdir(self._path_to_accounts):
+            return None
+        files = [f.path for f in os.scandir(self._path_to_accounts)
+                 if f.is_file() and AccountsFrame.FILES_EXTENSION in f.path]
+        return [f[f.rfind('\\') + 1:] for f in files if f.rfind('\\') > -1]
+
+    def _insert_labels(self: 'AccountsFrame'):
+        account_files = self._find_logged_accounts()
+        for i in account_files:
+            self.accounts_logged.insert(
+                0, i[:i.rfind(AccountsFrame.FILES_EXTENSION)])
+
+        self._count = len(account_files)
+        self._accounts_count_label.configure(
+            text=f'Всего аккаунтов: {self._count}')

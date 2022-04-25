@@ -102,6 +102,10 @@ class ActionFrame(ttk.LabelFrame):
         except ValueError:
             return 0
 
+    @property
+    def max_count_accounts(self: 'ActionFrame') -> int:
+        return int(self._max_accounts_alive_var.get())
+
     def get_checkboxes(self: 'ActionFrame') -> dict[str, bool]:
         return {
             'like': self._like_bool.get(),
