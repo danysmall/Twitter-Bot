@@ -73,7 +73,11 @@ class MainWindow():
         print(f'Account <{prompt}> added')
 
     def del_account(self: 'MainWindow') -> None:
-        print('Delete account')
+        answer = messagebox.askyesno(
+            'Удаление аккаунта',
+            'Вы действительно хотите удалить этот аккаунт?')
+        if answer:
+            self._accounts_frame.delete_account()
 
     def login_account(self: 'MainWindow') -> None:
         print('Logged to account')

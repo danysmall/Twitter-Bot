@@ -9,8 +9,9 @@ class AccountsFrame(ttk.LabelFrame):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
-        self._path_to_accounts = './'
+        self._path_to_accounts = '.\\'
         self._count = 0
+        self._accounts = list()
         self._accounts_count_label = ttk.Label(
             self, text=f'Всего аккаунтов: {self._count}')
 
@@ -78,6 +79,31 @@ class AccountsFrame(ttk.LabelFrame):
     def login_account_func(self: 'AccountsFrame', function: Callable) -> None:
         self._login_btn.configure(command=function)
 
+    def delete_account(self: 'AccountsFrame') -> None:
+        select = self.accounts_logged.curselection()[0]
+        filename = self.accounts_logged.get(select)
+        self.accounts_logged.delete(select)
+        self._delete_account_file(filename)
+
+    def _delete_account_file(self: 'AccountsFrame', filename: str) -> None:
+        try:
+            os.remove('{path}{filename}{ext}'.format(
+                path=self._path_to_accounts,
+                filename=filename,
+                ext=AccountsFrame.FILES_EXTENSION))
+            self._accounts.remove(f'{filename}{AccountsFrame.FILES_EXTENSION}')
+            self._update_count()
+        except FileNotFoundError:
+            pass
+
+    def _update_count(self: 'AccountsFrame', count=None) -> None:
+        if count is not None:
+            self._count = count
+        else:
+            self._count = len(self._accounts)
+        self._accounts_count_label.configure(
+            text=f'Всего аккаунтов: {self._count}')
+
     def _find_logged_accounts(self: 'AccountsFrame') -> Union[list, None]:
         if not os.path.isdir(self._path_to_accounts):
             return None
@@ -87,10 +113,10 @@ class AccountsFrame(ttk.LabelFrame):
 
     def _insert_labels(self: 'AccountsFrame'):
         account_files = self._find_logged_accounts()
-        for i in account_files:
-            self.accounts_logged.insert(
-                0, i[:i.rfind(AccountsFrame.FILES_EXTENSION)])
+        if account_files is not None:
+            for i in account_files:
+                self.accounts_logged.insert(
+                    0, i[:i.rfind(AccountsFrame.FILES_EXTENSION)])
 
-        self._count = len(account_files)
-        self._accounts_count_label.configure(
-            text=f'Всего аккаунтов: {self._count}')
+            self._accounts = account_files
+            self._update_count(len(account_files))
