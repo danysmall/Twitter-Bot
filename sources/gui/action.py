@@ -1,8 +1,10 @@
-from tkinter import ttk, BooleanVar
+from tkinter import ttk, BooleanVar, StringVar
 
 
 class ActionFrame(ttk.LabelFrame):
     """Action pannel with checkboxes and buttons."""
+    MASK_MAX_INT_LEN = 4
+    CYFRALS_STR = [str(i) for i in range(10)]
 
     def __init__(self: 'ActionFrame', *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
@@ -27,13 +29,55 @@ class ActionFrame(ttk.LabelFrame):
         self._comment_check.grid(column=3, row=0)
 
         self._account_count_label = ttk.Label(
-            self, text='Количество аккаунтов')
-        self._account_count = ttk.Entry(self)
+            self, text='Количество аккаунтов: ')
+
+        self._account_count_var = StringVar()
+        self._account_count = ttk.Entry(
+            self, name='account_count', textvariable=self._account_count_var)
+        self._bind_int_mask(
+            self._account_count,
+            self._account_count_var)
 
         self._account_count_label.grid(
-            column=0, row=1, columnspan=2, padx=10, pady=(15, 0))
+            column=0, row=1, columnspan=2, sticky='w', padx=10, pady=(15, 5))
         self._account_count.grid(
-            column=2, row=1, columnspan=2, sticky='ew', pady=(15, 0))
+            column=2, row=1, columnspan=2, sticky='ew', pady=(15, 5))
+
+        self._max_accounts_alive_label = ttk.Label(
+            self, text='Одновременных аккаунтов: ')
+
+        self._max_accounts_alive_var = StringVar()
+        self._max_accounts_alive = ttk.Entry(
+            self, name='max_account',
+            textvariable=self._max_accounts_alive_var)
+        self._bind_int_mask(
+            self._max_accounts_alive,
+            self._max_accounts_alive_var)
+
+        self._max_accounts_alive_label.grid(
+            column=0, row=10, columnspan=2, sticky='w')
+        self._max_accounts_alive.grid(
+            column=2, row=10, columnspan=2, sticky='ew')
+
+    def _bind_int_mask(
+        self: 'ActionFrame',
+        entity: ttk.Entry,
+        variable: StringVar
+    ) -> None:
+        def bind_function(_):
+            self._input_int_mask(_, variable)
+        entity.bind('<KeyPress>', bind_function)
+        entity.bind('<KeyRelease>', bind_function)
+
+    def _input_int_mask(self: 'ActionFrame', _, entity) -> None:
+        temp = entity.get()
+        changed = ''
+        for index, char in enumerate(temp):
+            if index > ActionFrame.MASK_MAX_INT_LEN:
+                break
+            if char in ActionFrame.CYFRALS_STR:
+                changed += char
+        entity.set(changed)
 
     @property
     def is_like(self: 'ActionFrame') -> bool:
