@@ -4,6 +4,8 @@ from gui import ActionFrame, AccountsFrame, ProxyFrame, LogsFrame
 from typing import Union
 from twitterbot import TwitterBot
 from threading import Thread
+from random import randint
+from time import sleep
 
 
 class MainWindow():
@@ -12,6 +14,7 @@ class MainWindow():
     def __init__(self: 'MainWindow') -> None:
         self._all_thread_pool: list[Thread]
         self._all_thread_pool = list()
+        self._work_thread_pool = list()
 
         self._root = Tk()
         self._root.title('Twitter Bot')
@@ -30,18 +33,19 @@ class MainWindow():
         self._accounts_frame.del_account_func = self.del_account
         self._accounts_frame.login_account_func = self.login_account
         self._accounts_frame.path_to_accounts = '.\\accounts\\'
+        self._accounts_frame.start_scan()
 
         self._proxy_frame = ProxyFrame(
             self._root, text='Список прокси', padding='10 10 10 10')
         self._proxy_frame.grid(column=0, row=20, sticky='new', padx=15, pady=5)
 
-        self._logs_frame = LogsFrame(
-            self._root, text='Логи работы', padding='10 10 10 10')
-        self._logs_frame.grid(column=0, row=100, sticky='new', padx=15, pady=5)
+        # self._logs_frame = LogsFrame(
+        #     self._root, text='Логи работы', padding='10 10 10 10')
+        # self._logs_frame.grid(column=0, row=100, sticky='new', padx=15, pady=5)
 
         self._start_btn = ttk.Button(
             self._root, text='Старт', command=self._main_loop)
-        self._start_btn.grid(column=0, row=15, sticky='ew', pady=5, padx=15)
+        self._start_btn.grid(column=0, row=25, sticky='ew', pady=5, padx=15)
 
     @property
     def logs_frame(self: 'MainWindow') -> 'LogsFrame':
@@ -65,12 +69,14 @@ class MainWindow():
         if prompt is None:
             return
 
-        # userbot = TwitterBot('127.0.0.1:80')
-        # bot_thread = Thread(target=userbot.login_new_user, args=(prompt,))
-        # bot_thread.start()
+        proxy = [i for i in self._proxy_frame.proxy_list if not i == '']
+        if MainWindow.check_for_proxy(proxy, 'Добавление аккаунта'):
+            index = randint(0, len(proxy) - 1)
 
-        # self._all_thread_pool.append(bot_thread)
-        print(f'Account <{prompt}> added')
+            userbot = TwitterBot(f'{prompt}.pkl', proxy[index])
+            bot_thread = Thread(target=userbot.login_new_user)
+            bot_thread.start()
+            self._all_thread_pool.append(bot_thread)
 
     def del_account(self: 'MainWindow') -> None:
         answer = messagebox.askyesno(
@@ -80,7 +86,28 @@ class MainWindow():
             self._accounts_frame.delete_account()
 
     def login_account(self: 'MainWindow') -> None:
-        print('Logged to account')
+        title = 'Вход в аккаунт'
+        uname = self._accounts_frame.selected_account
+        proxy = [i for i in self._proxy_frame.proxy_list if not i == '']
+        if uname is not None:
+            if len(proxy) > 0:
+                index = randint(0, len(proxy) - 1)
+                ubot = TwitterBot(uname, proxy[index])
+                thread = Thread(target=ubot.login_forever)
+                thread.start()
+                self._all_thread_pool.append(thread)
+            else:
+                messagebox.showerror(title)
+        else:
+            messagebox.showerror(title, 'Ни один аккаунт не был выбран')
+
+    @staticmethod
+    def check_for_proxy(proxy: list, title: str) -> bool:
+        if len(proxy) > 0:
+            return True
+        else:
+            messagebox.showerror(title, 'Нет доступных прокси')
+            return False
 
     def send_logs(self: 'MainWindow', message: Union[list, str]) -> None:
         self._logs_frame.send_logs(message)
@@ -93,29 +120,45 @@ class MainWindow():
         proxy = self._proxy_frame.proxy_list
         count = self._action_frame.count_accounts
         max_count = self._action_frame.max_count_accounts
+        link = self._action_frame.link
+        accounts = self._accounts_frame.all_accounts
+        message = self._action_frame.message
 
         thread_pool = list()
         for i in range(count):
-            userbot = TwitterBot('127.0.0.1')
+            uname = accounts[i]
+            uproxy = proxy[i % len(proxy)]
+            userbot = TwitterBot(uname, uproxy, True)
             bot_thread = Thread(target=userbot.start, kwargs={
-                'user': 'danysmall.pkl',
-                'tweet_link': 'https://twitter.com/_jessicasachs/status/1515855226598797321',
+                'url_of_tweet': link,
+                'reply_message': message,
                 'like': checkboxes['like'],
                 'subscribe': checkboxes['subscribe'],
                 'retweet': checkboxes['retweet'],
                 'comment': checkboxes['comment'],
             })
-
             thread_pool.append(bot_thread)
-        print(thread_pool)
+            self._all_thread_pool.append(bot_thread)
+            self._work_thread_pool.append(bot_thread)
+
         counter = 0
         while len(thread_pool) > counter:
-            print(counter)
             if self.count_alive_threads(thread_pool) < max_count:
                 thread_pool[counter].start()
                 counter += 1
 
-        print(checkboxes, proxy, count)
+        end_thread = Thread(target=self._check_for_done)
+        end_thread.start()
+
+    def _check_for_done(self):
+        alive_list = list(map(
+            lambda x: x.is_alive(), self._work_thread_pool))
+
+        while True in alive_list:
+            sleep(1)
+            alive_list = list(map(
+                lambda x: x.is_alive(), self._work_thread_pool))
+        self._stop_main_loop()
 
     def count_alive_threads(
         self: 'MainWindow',
@@ -134,12 +177,22 @@ class MainWindow():
         for thread in self._all_thread_pool:
             if thread.is_alive():
                 thread.join()
+        self._accounts_frame.stop_scan()
         self._root.destroy()
 
     def start(self: 'MainWindow') -> None:
         self._root.mainloop()
 
+    def force_stop(self: 'MainWindow') -> None:
+        try:
+            self._on_close()
+        except Exception:
+            pass
+
 
 if __name__ == '__main__':
     window = MainWindow()
-    window.start()
+    try:
+        window.start()
+    except Exception:
+        window.force_stop()

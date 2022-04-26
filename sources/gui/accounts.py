@@ -1,6 +1,8 @@
 from tkinter import ttk, Listbox, constants
 from typing import Callable, Union
 import os
+from threading import Thread
+from time import sleep
 
 
 class AccountsFrame(ttk.LabelFrame):
@@ -8,7 +10,7 @@ class AccountsFrame(ttk.LabelFrame):
 
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
-
+        self._scan_thread_bool = True
         self._path_to_accounts = '.\\'
         self._count = 0
         self._accounts = list()
@@ -35,6 +37,19 @@ class AccountsFrame(ttk.LabelFrame):
         self._add_btn.grid(column=1, row=10, sticky='new')
         self._login_btn.grid(
             column=2, row=10, sticky='new', padx=3, columnspan=2)
+
+    @property
+    def selected_account(self: 'AccountsFrame') -> Union[str, None]:
+        try:
+            select_id = self.accounts_logged.curselection()[0]
+            name = self.accounts_logged.get(select_id)
+            return f'{self._path_to_accounts}{name}{AccountsFrame.FILES_EXTENSION}'
+        except IndexError:
+            return None
+
+    @property
+    def all_accounts(self: 'AccountsFrame') -> list:
+        return self._accounts
 
     @property
     def path_to_accounts(self: 'AccountsFrame') -> str:
@@ -113,6 +128,7 @@ class AccountsFrame(ttk.LabelFrame):
 
     def _insert_labels(self: 'AccountsFrame'):
         account_files = self._find_logged_accounts()
+        self.accounts_logged.delete(0, constants.END)
         if account_files is not None:
             for i in account_files:
                 self.accounts_logged.insert(
@@ -120,3 +136,15 @@ class AccountsFrame(ttk.LabelFrame):
 
             self._accounts = account_files
             self._update_count(len(account_files))
+
+    def _scan_thread(self: 'AccountsFrame') -> None:
+        while self._scan_thread_bool:
+            self._insert_labels()
+            sleep(2)
+
+    def start_scan(self: 'AccountsFrame') -> None:
+        thread = Thread(target=self._scan_thread)
+        thread.start()
+
+    def stop_scan(self: 'AccountsFrame') -> None:
+        self._scan_thread_bool = False

@@ -10,17 +10,19 @@ from time import sleep
 import pickle
 
 
-class TwitterBot():
+class TwitterBot:
     PROXY_FILE = '.\\assets\\proxy.pkl'
+    PATH = '.\\accounts\\'
     WAIT_FOR_ELEMENT_S = 10
     SITE_MAIN_URL = 'https://twitter.com/'
     MAIN_URL_LEN = len(SITE_MAIN_URL)
 
-    def __init__(self, username, proxy):
+    def __init__(self, username, proxy, headless):
         # Setup main page
         self._main_page = 'https://twitter.com'
         self._home_url = 'https://twitter.com/home'
         self._proxy_list = dict()
+        self._username = username
         self._sleep_timer = 1
         self._driver = None
 
@@ -51,8 +53,9 @@ class TwitterBot():
         # Setup options
         self._options = Options()
         self._options.add_argument('window-size=1440,900')
-        # self._options.add_argument("--log-level=0")
-        # self._options.add_argument('--headless')
+        self._options.add_argument("--log-level=3")
+        if headless:
+            self._options.add_argument('--headless')
 
         self._action_buttons = None
 
@@ -76,8 +79,9 @@ class TwitterBot():
             return True
         return False
 
-    def _send_logs(self, message: str):
-        print(message)
+    @staticmethod
+    def send_logs(log_message: str):
+        print(log_message)
 
     def _get_main_page(self):
         self._driver.get(self._main_page)
@@ -91,18 +95,17 @@ class TwitterBot():
         except selenium.common.exceptions.NoSuchElementException:
             return False
 
-    def login_new_user(self: 'TwitterBot', filename: str) -> None:
+    def login_new_user(self: 'TwitterBot') -> None:
+        self.start_browser()
         self._driver.get(self._main_page)
         while not self.is_user_logged():
             sleep(self._sleep_timer)
-        self._save_cookies(filename)
+        self._save_cookies(self._username)
 
     def login_user(self: 'TwitterBot', cookies_file: str) -> bool:
         self._driver.get(self._main_page)
         try:
-            cookies = pickle.load(open(cookies_file, 'rb'))
-            for cookie in cookies:
-                self._driver.add_cookie(cookie)
+            self._load_cookies(cookies_file)
             self._driver.get(self._home_url)
             self._driver.quit()
             return True
@@ -111,7 +114,12 @@ class TwitterBot():
             return False
 
     def _save_cookies(self: 'TwitterBot', filename: str) -> None:
-        pickle.dump(self._driver.get_cookies(), open(filename, 'wb'))
+        pickle.dump(self._driver.get_cookies(), open(f'{TwitterBot.PATH}{filename}', 'wb'))
+
+    def _load_cookies(self: 'TwitterBot', filename: str) -> None:
+        cookies = pickle.load(open(filename, 'rb'))
+        for cookie in cookies:
+            self._driver.add_cookie(cookie)
 
     def _wait_for_action_pannel(self, link):
         # Goto link of the tweet
@@ -124,10 +132,10 @@ class TwitterBot():
                 action_pannel = tweet_panel[1]
                 break
             except selenium.common.exceptions.NoSuchElementException:
-                self._send_logs('No such element')
+                TwitterBot.send_logs('No such element')
                 sleep(self._sleep_timer)
             except IndexError:
-                self._send_logs('Index Error')
+                TwitterBot.send_logs('Index Error')
                 sleep(self._sleep_timer)
 
         while True:
@@ -140,7 +148,7 @@ class TwitterBot():
                 print(len(buttons))
                 sleep(self._sleep_timer)
             except selenium.common.exceptions.NoSuchElementException:
-                self._send_logs('Cant find action pannel')
+                TwitterBot.send_logs('Cant find action pannel')
                 sleep(self._sleep_timer)
 
     def _like_tweet(self, link):
@@ -150,7 +158,7 @@ class TwitterBot():
             self._wait_for_action_pannel(link)
 
         self._action_buttons[2].click()
-        self._send_logs('Like was clicked')
+        TwitterBot.send_logs('Like was clicked')
         sleep(self._sleep_timer)
 
     def _retweet_tweet(self, link):
@@ -167,7 +175,7 @@ class TwitterBot():
             '/html/body/div[1]/div/div/div[1]/div[2]/'
             + 'div/div/div/div[2]/div[3]/div/div/div/div')
         retweet_btn.click()
-        self._send_logs('Retweet was clicked')
+        TwitterBot.send_logs('Retweet was clicked')
         sleep(self._sleep_timer)
 
     def _reply(self, link, text):
@@ -178,10 +186,10 @@ class TwitterBot():
             try:
                 editor = self._driver.find_element(
                     By.CLASS_NAME, 'DraftEditor-editorContainer')
-                self._send_logs('Editor area found')
+                TwitterBot.send_logs('Editor area found')
                 break
             except selenium.common.exceptions.NoSuchElementException:
-                self._send_logs('Cant find editor area')
+                TwitterBot.send_logs('Cant find editor area')
                 sleep(self._sleep_timer)
 
         editor.click()
@@ -195,19 +203,53 @@ class TwitterBot():
             By.XPATH, '//*[@data-testid="tweetButtonInline"]').click()
         sleep(self._sleep_timer)
 
-        self._send_logs('Reply sended')
+        TwitterBot.send_logs('Reply sended')
 
-    def _get_profile_link(self: 'TwitterBot', full_link: str) -> str:
+    def login_forever(self):
+        self.start_browser()
+        if self._driver is not None:
+            self._driver.get(self._main_page)
+            self._load_cookies(self._username)
+            self._driver.get(self._home_url)
+            while TwitterBot.is_driver_alive(self._driver):
+                sleep(1)
+
+    @staticmethod
+    def is_driver_alive(driver: 'webdriver.Chrome') -> bool:
+        try:
+            driver.title
+            return True
+        except Exception:
+            return False
+
+    @staticmethod
+    def get_profile_link(full_link: str) -> str:
         return full_link[:full_link.find('/', TwitterBot.MAIN_URL_LEN + 1)]
 
-    def start(self, tweet_link, message):
+    def start(
+        self,
+        url_of_tweet: str,
+        reply_message: str,
+        like: bool,
+        subscribe: bool,
+        retweet: bool,
+        comment: bool
+    ) -> None:
+
+        self.start_browser()
         self._get_main_page()
-        # self._wait_for_login()
-        self.login_user('danysmall.pkl')
-        # self._save_cookies('cookies.pkl')
-        self._like_tweet(tweet_link)
-        self._retweet_tweet(tweet_link)
-        self._reply(tweet_link, message)
+        self.login_user(self._username)
+
+        if like:
+            self._like_tweet(url_of_tweet)
+        if subscribe:
+            pass
+        if retweet:
+            self._retweet_tweet(url_of_tweet)
+        if comment:
+            self._reply(url_of_tweet, reply_message)
+
+        print('Work Done')
 
     def stop(self: 'TwitterBot') -> None:
         pickle.dump(self._proxy_list, open(TwitterBot.PROXY_FILE, 'wb'))
@@ -218,10 +260,10 @@ class TwitterBot():
 if __name__ == '__main__':
     tweet_link = 'https://twitter.com/_jessicasachs/status/1515855226598797321'
     message = 'Oh, nice work man'
-    userbot = TwitterBot('danysmall', '127.0.0.1:80')
+    userbot = TwitterBot('danysmall', '128.0.0.1:80')
     try:
         userbot.start_browser()
-        print(userbot._get_profile_link(tweet_link))
+        print(TwitterBot.get_profile_link(tweet_link))
     # userbot.start(tweet_link, message)
     finally:
         userbot.stop()

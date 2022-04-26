@@ -39,7 +39,7 @@ class ActionFrame(ttk.LabelFrame):
             self._account_count_var)
 
         self._account_count_label.grid(
-            column=0, row=1, columnspan=2, sticky='w', padx=10, pady=(15, 5))
+            column=0, row=1, columnspan=2, sticky='w', pady=(15, 5))
         self._account_count.grid(
             column=2, row=1, columnspan=2, sticky='ew', pady=(15, 5))
 
@@ -58,6 +58,27 @@ class ActionFrame(ttk.LabelFrame):
             column=0, row=10, columnspan=2, sticky='w')
         self._max_accounts_alive.grid(
             column=2, row=10, columnspan=2, sticky='ew')
+
+        self._link_var = StringVar()
+        self._link_label = ttk.Label(
+            self, text='Ссылка на твит: ')
+        self._link_entry = ttk.Entry(
+            self, text='tweet_link', textvariable=self._link_var)
+
+        self._link_label.grid(
+            column=0, row=20, columnspan=2, sticky='w', pady=5)
+        self._link_entry.grid(
+            column=2, row=20, columnspan=2, sticky='ew', pady=5)
+
+        self._reply_str = StringVar()
+        self._relpy_label = ttk.Label(self, text='Сообщение комментария')
+        self._reply_entry = ttk.Entry(
+            self, text='reply', textvariable=self._reply_str)
+
+        self._relpy_label.grid(
+            column=0, row=30, columnspan=2, sticky='w')
+        self._reply_entry.grid(
+            column=2, row=30, columnspan=2, sticky='ew')
 
     def _bind_int_mask(
         self: 'ActionFrame',
@@ -78,6 +99,14 @@ class ActionFrame(ttk.LabelFrame):
             if char in ActionFrame.CYFRALS_STR:
                 changed += char
         entity.set(changed)
+
+    @property
+    def message(self: 'ActionFrame') -> str:
+        return self._reply_str.get()
+
+    @property
+    def link(self: 'ActionFrame') -> str:
+        return self._link_var.get()
 
     @property
     def is_like(self: 'ActionFrame') -> bool:
@@ -104,7 +133,17 @@ class ActionFrame(ttk.LabelFrame):
 
     @property
     def max_count_accounts(self: 'ActionFrame') -> int:
-        return int(self._max_accounts_alive_var.get())
+        return ActionFrame.str_to_int(self._max_accounts_alive_var.get())
+
+    @staticmethod
+    def str_to_int(variable: str) -> int:
+        cyfs = [str(i) for i in range(10)]
+        result = ''
+        for char in variable:
+            if char in cyfs:
+                result += char
+        print(result)
+        return int(result)
 
     def get_checkboxes(self: 'ActionFrame') -> dict[str, bool]:
         return {
