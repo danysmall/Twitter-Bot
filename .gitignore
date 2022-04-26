@@ -4,5 +4,7 @@ accounts/
 assets/
 venv/
 .idea/
+dist/
+build/
 
 *.pkl

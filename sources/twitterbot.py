@@ -6,6 +6,7 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.proxy import Proxy, ProxyType
 
+from subprocess import CREATE_NO_WINDOW
 from time import sleep
 import pickle
 
@@ -49,6 +50,7 @@ class TwitterBot:
 
         # Setup services
         self._service = Service('chromedriver.exe')
+        self._service.creationflags = CREATE_NO_WINDOW
 
         # Setup options
         self._options = Options()
