@@ -26,8 +26,11 @@ class TwitterBot:
         self._username = username
         self._sleep_timer = 1
         self._driver = None
+        self._enable_proxy = False
 
         self.load_proxy_list()
+        if proxy.find('127.0.0.1:80') == -1:
+            self._enable_proxy = True
         if self.is_saved_proxy(username):
             # Setup proxylist
             self._proxy = Proxy({
@@ -63,10 +66,15 @@ class TwitterBot:
 
     def start_browser(self):
         # Setup browser
-        self._driver = webdriver.Chrome(
-            service=self._service,
-            options=self._options,)
-        # desired_capabilities=self._capabilities)
+        if self._enable_proxy:
+            self._driver = webdriver.Chrome(
+                service=self._service,
+                options=self._options,
+                desired_capabilities=self._capabilities)
+        else:
+            self._driver = webdriver.Chrome(
+                service=self._service,
+                options=self._options)
 
         self._driver.implicitly_wait(TwitterBot.WAIT_FOR_ELEMENT_S)
 

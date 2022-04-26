@@ -128,11 +128,16 @@ class AccountsFrame(ttk.LabelFrame):
 
     def _insert_labels(self: 'AccountsFrame'):
         account_files = self._find_logged_accounts()
-        self.accounts_logged.delete(0, constants.END)
+        listbox = self.accounts_logged.get(0, constants.END)
+
+        # self.accounts_logged.delete(0, constants.END)
         if account_files is not None:
             for i in account_files:
-                self.accounts_logged.insert(
-                    0, i[:i.rfind(AccountsFrame.FILES_EXTENSION)])
+                name = i[:i.rfind(AccountsFrame.FILES_EXTENSION)]
+                if name not in listbox:
+                    print(name, listbox)
+                    self.accounts_logged.insert(
+                        0, i[:i.rfind(AccountsFrame.FILES_EXTENSION)])
 
             self._accounts = account_files
             self._update_count(len(account_files))

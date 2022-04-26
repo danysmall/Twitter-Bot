@@ -73,7 +73,7 @@ class MainWindow():
         if MainWindow.check_for_proxy(proxy, 'Добавление аккаунта'):
             index = randint(0, len(proxy) - 1)
 
-            userbot = TwitterBot(f'{prompt}.pkl', proxy[index])
+            userbot = TwitterBot(f'{prompt}.pkl', proxy[index], False)
             bot_thread = Thread(target=userbot.login_new_user)
             bot_thread.start()
             self._all_thread_pool.append(bot_thread)
@@ -92,7 +92,7 @@ class MainWindow():
         if uname is not None:
             if len(proxy) > 0:
                 index = randint(0, len(proxy) - 1)
-                ubot = TwitterBot(uname, proxy[index])
+                ubot = TwitterBot(uname, proxy[index], False)
                 thread = Thread(target=ubot.login_forever)
                 thread.start()
                 self._all_thread_pool.append(thread)
